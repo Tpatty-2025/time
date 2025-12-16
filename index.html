@@ -57,10 +57,14 @@
   <h1>倒數計時器</h1>
 
   <div class="controls">
-    <input type="number" id="minutes" min="0" value="0" /> 分
-    <input type="number" id="seconds" min="0" max="59" value="0" /> 秒
-    font-size: 32px;
+    <input type="number" id="minutes" /> <span class="unit">分</span>
+    <input type="number" id="seconds" /> <span class="unit">秒</span>
+    /* <input type="number" id="minutes" min="0" value="0" /> 分 */
+   /*  <input type="number" id="seconds" min="0" max="59" value="0" /> 秒 */
   </div>
+unit {
+  font-size: 32px;
+}
 
   <div class="controls">
     <button onclick="startTimer()">開始</button>
