@@ -76,8 +76,8 @@
     <h1>布丁狗專注計時器</h1>
 
     <div class="input-area">
-      <input type="number" id="minutesInput" placeholder="分鐘"min="1" />
-      <input type="number" id="minutesInput" placeholder="秒鐘"sec="1" />
+        <input type="number" id="minutesInput" placeholder="分鐘" min="0" /> ：
+        <input type="number" id="secondsInput" placeholder="秒" min="0" max="59" />
     </div>
 
     <div id="time">00:00</div>
@@ -103,11 +103,14 @@
       if (timer) return;
 
       if (remainingSeconds === 0) {
-        const minutes = parseInt(document.getElementById('minutesInput').value);
-        if (isNaN(minutes) || minutes <= 0) {
-          alert('請輸入有效的分鐘數');
-          return;
-        }
+          const minutes = parseInt(document.getElementById('minutesInput').value) || 0;
+          const seconds = parseInt(document.getElementById('secondsInput').value) || 0;
+
+
+          if (minutes === 0 && seconds === 0) {
+              alert('請輸入分鐘或秒數');
+              return;
+              }
         remainingSeconds = minutes * 60;
       }
 
@@ -136,6 +139,7 @@
       remainingSeconds = 0;
       updateDisplay();
       document.getElementById('minutesInput').value = '';
+      document.getElementById('secondsInput').value = '';
     }
 
     updateDisplay();
