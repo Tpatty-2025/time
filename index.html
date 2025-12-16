@@ -6,27 +6,43 @@
   <style>
     body {
       font-family: Arial, sans-serif;
-      background: #0f172a;
-      color: white;
-      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
       margin: 0;
-      padding: 40px;
+      background: #f7d774;
+      color: #fff;
     }
-    .timer {
-      font-size: 64px;
-      margin: 20px 0;
+
+    h1 {
+      margin-bottom: 20px;
     }
+
+    .controls {
+      margin-bottom: 20px;
+    }
+
     input {
-      width: 80px;
-      font-size: 20px;
-      text-align: center;
-    }
-    button {
+      width: 60px;
       font-size: 18px;
-      padding: 8px 20px;
-      margin-top: 10px;
+      text-align: center;
+      margin: 0 5px;
+    }
+
+    button {
+      font-size: 16px;
+      margin: 0 5px;
+      padding: 6px 12px;
       cursor: pointer;
     }
+
+    #display {
+      font-size: 48px;
+      margin-top: 20px;
+    }
+
     canvas {
       position: fixed;
       top: 0;
@@ -36,92 +52,139 @@
   </style>
 </head>
 <body>
-
   <h1>倒數計時器</h1>
 
-  <div>
-    分鐘 <input id="minutes" type="number" min="0" value="1" />
-    秒鐘 <input id="seconds" type="number" min="0" max="59" value="0" />
+  <div class="controls">
+    <input type="number" id="minutes" min="0" value="0" /> 分
+    <input type="number" id="seconds" min="0" max="59" value="0" /> 秒
   </div>
 
-  <button onclick="startTimer()">開始</button>
+  <div class="controls">
+    <button onclick="startTimer()">開始</button>
+    <button onclick="pauseTimer()">暫停</button>
+    <button onclick="resetTimer()">重置</button>
+  </div>
 
-  <div class="timer" id="display">01:00</div>
+  <div id="display">00:00</div>
 
   <canvas id="fireworks"></canvas>
 
   <script>
-    let interval;
-    let canvas = document.getElementById('fireworks');
-    let ctx = canvas.getContext('2d');
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
+    let totalSeconds = 0;
+    let interval = null;
+    let paused = false;
+
+    const display = document.getElementById('display');
+
+    function updateDisplay() {
+      const m = String(Math.floor(totalSeconds / 60)).padStart(2, '0');
+      const s = String(totalSeconds % 60).padStart(2, '0');
+      display.textContent = `${m}:${s}`;
+    }
 
     function startTimer() {
-      clearInterval(interval);
+      if (interval) return;
 
-      let min = parseInt(document.getElementById('minutes').value) || 0;
-      let sec = parseInt(document.getElementById('seconds').value) || 0;
-      let total = min * 60 + sec;
+      if (totalSeconds === 0 && !paused) {
+        const m = parseInt(document.getElementById('minutes').value) || 0;
+        const s = parseInt(document.getElementById('seconds').value) || 0;
+        totalSeconds = m * 60 + s;
+      }
 
-      updateDisplay(total);
+      if (totalSeconds <= 0) return;
+
+      paused = false;
+      updateDisplay();
 
       interval = setInterval(() => {
-        total--;
-        updateDisplay(total);
-        if (total <= 0) {
+        if (totalSeconds > 0) {
+          totalSeconds--;
+          updateDisplay();
+        } else {
           clearInterval(interval);
+          interval = null;
           launchFireworks();
         }
       }, 1000);
     }
 
-    function updateDisplay(total) {
-      let m = String(Math.floor(total / 60)).padStart(2, '0');
-      let s = String(total % 60).padStart(2, '0');
-      document.getElementById('display').textContent = `${m}:${s}`;
+    function pauseTimer() {
+      if (interval) {
+        clearInterval(interval);
+        interval = null;
+        paused = true;
+      }
+    }
+
+    function resetTimer() {
+      clearInterval(interval);
+      interval = null;
+      totalSeconds = 0;
+      paused = false;
+      updateDisplay();
     }
 
     /* ===== 煙火動畫 ===== */
+    const canvas = document.getElementById('fireworks');
+    const ctx = canvas.getContext('2d');
+
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    window.addEventListener('resize', () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    });
+
+    let particles = [];
+
     function launchFireworks() {
-      let particles = [];
-      for (let i = 0; i < 200; i++) {
-        particles.push({
-          x: canvas.width / 2,
-          y: canvas.height / 2,
-          angle: Math.random() * 2 * Math.PI,
-          speed: Math.random() * 6 + 2,
-          life: 100,
-          color: `hsl(${Math.random() * 360}, 100%, 60%)`
-        });
-      }
-
-      function animate() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        particles.forEach(p => {
-          p.x += Math.cos(p.angle) * p.speed;
-          p.y += Math.sin(p.angle) * p.speed;
-          p.life--;
-
-          ctx.fillStyle = p.color;
-          ctx.beginPath();
-          ctx.arc(p.x, p.y, 3, 0, Math.PI * 2);
-          ctx.fill();
-        });
-
-        particles = particles.filter(p => p.life > 0);
-        if (particles.length > 0) {
-          requestAnimationFrame(animate);
-        }
+      for (let i = 0; i < 5; i++) {
+        createFirework();
       }
       animate();
     }
 
-    window.onresize = () => {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
-    };
-  </script>
+    function createFirework() {
+      const x = Math.random() * canvas.width;
+      const y = Math.random() * canvas.height / 2;
+      const colors = ['#ff3b3b', '#ffd93b', '#3b82f6', '#22c55e', '#e879f9'];
 
+      for (let i = 0; i < 80; i++) {
+        particles.push({
+          x,
+          y,
+          angle: Math.random() * Math.PI * 2,
+          speed: Math.random() * 5 + 2,
+          radius: 2,
+          life: 100,
+          color: colors[Math.floor(Math.random() * colors.length)]
+        });
+      }
+    }
+
+    function animate() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      particles.forEach((p, index) => {
+        p.x += Math.cos(p.angle) * p.speed;
+        p.y += Math.sin(p.angle) * p.speed;
+        p.life--;
+
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+        ctx.fillStyle = p.color;
+        ctx.fill();
+
+        if (p.life <= 0) {
+          particles.splice(index, 1);
+        }
+      });
+
+      if (particles.length > 0) {
+        requestAnimationFrame(animate);
+      }
+    }
+  </script>
 </body>
 </html>
