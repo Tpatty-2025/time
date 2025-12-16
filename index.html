@@ -2,147 +2,126 @@
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8" />
-  <title>布丁狗計時器</title>
+  <title>倒數計時器</title>
   <style>
-    * {
-      box-sizing: border-box;
-      font-family: "Segoe UI", "Noto Sans TC", sans-serif;
-    }
-
     body {
+      font-family: Arial, sans-serif;
+      background: #0f172a;
+      color: white;
+      text-align: center;
       margin: 0;
-      min-height: 100vh;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      background-color: #f7d774;
-      background-size: cover;
-      background-position: center;
+      padding: 40px;
     }
-
-    .timer-card {
-      background: rgba(255, 255, 255, 0.9);
-      padding: 32px 40px;
-      border-radius: 24px;
-      text-align: center;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+    .timer {
+      font-size: 64px;
+      margin: 20px 0;
     }
-
-    h1 {
-      margin-top: 0;
-      margin-bottom: 20px;
-      font-size: 28px;
-      color: #7a5c2e;
-    }
-
-    #time {
-      font-size: 56px;
-      font-weight: bold;
-      margin-bottom: 20px;
-      color: #333;
-    }
-
-    .controls button {
-      margin: 0 6px;
-      padding: 10px 18px;
-      font-size: 16px;
-      border: none;
-      border-radius: 12px;
-      cursor: pointer;
-      background-color: #f7d774;
-      color: #5a4300;
-    }
-
-    .controls button:hover {
-      opacity: 0.85;
-    }
-
-    .input-area {
-      margin-bottom: 16px;
-    }
-
-    .input-area input {
+    input {
       width: 80px;
-      padding: 6px;
-      font-size: 16px;
+      font-size: 20px;
       text-align: center;
-      border-radius: 8px;
-      border: 1px solid #ccc;
+    }
+    button {
+      font-size: 18px;
+      padding: 8px 20px;
+      margin-top: 10px;
+      cursor: pointer;
+    }
+    canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      pointer-events: none;
     }
   </style>
 </head>
 <body>
-  <div class="timer-card">
-    <h1>布丁狗專注計時器</h1>
 
-    <div class="input-area">
-      <input type="number" id="minutesInput" placeholder="分鐘" min="0" /> ：
-      <input type="number" id="secondsInput" placeholder="秒" min="0" max="59" />
-    </div>
+  <h1>倒數計時器</h1>
 
-    <div id="time">00:00</div>
-
-    <div class="controls">
-      <button onclick="startTimer()">開始</button>
-      <button onclick="pauseTimer()">暫停</button>
-      <button onclick="resetTimer()">重設</button>
-    </div>
+  <div>
+    分鐘 <input id="minutes" type="number" min="0" value="1" />
+    秒鐘 <input id="seconds" type="number" min="0" max="59" value="0" />
   </div>
 
-  <script>
-    let timer;
-    let remainingSeconds = 0;
+  <button onclick="startTimer()">開始</button>
 
-    function updateDisplay() {
-      const minutes = String(Math.floor(remainingSeconds / 60)).padStart(2, '0');
-      const seconds = String(remainingSeconds % 60).padStart(2, '0');
-      document.getElementById('time').textContent = `${minutes}:${seconds}`;
-    }
+  <div class="timer" id="display">01:00</div>
+
+  <canvas id="fireworks"></canvas>
+
+  <script>
+    let interval;
+    let canvas = document.getElementById('fireworks');
+    let ctx = canvas.getContext('2d');
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
 
     function startTimer() {
-      if (timer) return;
+      clearInterval(interval);
 
-      if (remainingSeconds === 0) {
-        const minutes = parseInt(document.getElementById('minutesInput').value) || 0;
-        const seconds = parseInt(document.getElementById('secondsInput').value) || 0;
+      let min = parseInt(document.getElementById('minutes').value) || 0;
+      let sec = parseInt(document.getElementById('seconds').value) || 0;
+      let total = min * 60 + sec;
 
-        if (minutes === 0 && seconds === 0) {
-          alert('請輸入分鐘或秒數');
-          return;
-        }
+      updateDisplay(total);
 
-        remainingSeconds = minutes * 60 + seconds;
-      }
-
-      updateDisplay();
-
-      timer = setInterval(() => {
-        remainingSeconds--;
-        updateDisplay();
-
-        if (remainingSeconds <= 0) {
-          clearInterval(timer);
-          timer = null;
-          alert('時間到囉！');
+      interval = setInterval(() => {
+        total--;
+        updateDisplay(total);
+        if (total <= 0) {
+          clearInterval(interval);
+          launchFireworks();
         }
       }, 1000);
     }
 
-    function pauseTimer()() {
-      clearInterval(timer);
-      timer = null;
+    function updateDisplay(total) {
+      let m = String(Math.floor(total / 60)).padStart(2, '0');
+      let s = String(total % 60).padStart(2, '0');
+      document.getElementById('display').textContent = `${m}:${s}`;
     }
 
-    function resetTimer() {
-      clearInterval(timer);
-      timer = null;
-      remainingSeconds = 0;
-      updateDisplay();
-      document.getElementById('minutesInput').value = '';
-      document.getElementById('secondsInput').value = '';
+    /* ===== 煙火動畫 ===== */
+    function launchFireworks() {
+      let particles = [];
+      for (let i = 0; i < 200; i++) {
+        particles.push({
+          x: canvas.width / 2,
+          y: canvas.height / 2,
+          angle: Math.random() * 2 * Math.PI,
+          speed: Math.random() * 6 + 2,
+          life: 100,
+          color: `hsl(${Math.random() * 360}, 100%, 60%)`
+        });
+      }
+
+      function animate() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        particles.forEach(p => {
+          p.x += Math.cos(p.angle) * p.speed;
+          p.y += Math.sin(p.angle) * p.speed;
+          p.life--;
+
+          ctx.fillStyle = p.color;
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, 3, 0, Math.PI * 2);
+          ctx.fill();
+        });
+
+        particles = particles.filter(p => p.life > 0);
+        if (particles.length > 0) {
+          requestAnimationFrame(animate);
+        }
+      }
+      animate();
     }
 
-    updateDisplay();
+    window.onresize = () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    };
   </script>
+
 </body>
 </html>
